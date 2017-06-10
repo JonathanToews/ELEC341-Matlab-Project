@@ -5,6 +5,14 @@ A = [0 0 1 0; 0 0 0 1; -9/10 9/10 -9/100 9/100; 1/10 -1/10 1/100 -1/100]
 B = [0; 0; 9/10; 0]
 C = [0 1 0 0]
 D = [0]
+F = [0; 0; 1; 0]
+
+sys = ss(A, B, C, D);
+step(sys);
+
+sys2 = ss(A, F, C, D);
+step(sys2)
+
 
 % Question #2: Compute Open-Loop Eigenvalues
 eigs = eig(A)
