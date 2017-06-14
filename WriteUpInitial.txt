@@ -1,0 +1,9 @@
+Questions 1 - 3: Discussion on open-loop system
+- In the open loop system, the system response to unit step changes in the input I and disturbance torque grow. From the step response graph, it can be seen that both responses keep growing without bound. This is because the system is almost not controllable. The determinant of the 4x4 controllability matrix [B AB A^2B A^3B] is almost 0 (-0.0066). We can also look at how well conditioned the A matrix is from its condition number. For a well conditioned matrix, the condition number is small; however, in our case, the condition number (magnitude of largest eigenvalue / magnitude of smallest eigenvalue) is -0.05 + 0.9987i / -0.0000 + 0.0000i is extremely large. This large condition number indicates that our A matrix is almost singular. In fact, when running the rref(A) (row reduced echelon format), we see that the last row of the matrix is all 0s, indicating that we really have 3 equations with 4 unknowns (this is because rows 3 and 4 are not linearly independent...row 3 = row 4 * -1)
+- The open-loop system does not do a good job with negating disturbances; thus, we should add feedback in an attempt to improve the output of the system (get the actual output closer to the desired output)
+
+Question 4
+- In order to find the vector K that gives us the closed-loop poles of -2, -1, -1+-j for our system, we first find the characteristic equation for those poles. That is (s + 1)(s + 2) (s^2 + 2s + 2). We also know that det(sI - (A - BK)) will give us the characteristic equation for the system. By equating those two equations, we are able to determine the 4 components of the gain vector, K
+
+Question 5
+- To find Kr, we simply use the formula -1 / (C (A-B*K)^-1 B). The resulting value of Kr (44.4444) is simply the addition of K1 and K2 from the previous question. 
