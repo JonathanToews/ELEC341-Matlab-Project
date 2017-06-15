@@ -6,7 +6,7 @@ x0 = [0 0 0 0];                     % Initial States
 % Question #1
 % Determine state space representation
 A = [0 0 1 0; 0 0 0 1; -k/J1 k/J1 -c/J1 c/J1; k/J2 -k/J2 c/J2 -c/J2];
-B = [0; 0; kI/J1; 0];
+B = [0 0; 0 0; kI/J1 0; 0 1/J2];
 C = [0 1 0 0];
 D = [0];
 F = [0; 0; 0; 1/J2];         % disturbance torque vector
@@ -22,11 +22,11 @@ eigs = eig(A)
 % Simulate the unit step changes in I and Td
 
 t = [0:0.01:30];
-input = ones(length(t), 1);
+input = [ones(length(t), 1) zeros(length(t), 1)]
 
 % define sys_fb_I as the ss with input I (Td = 0)
-sys_I = ss(A, B, C, D);
-response_I = lsim(sys_I, input, t, x0);
+sys1 = ss(A, B, C, D);
+response_I = lsim(sys1, input, t, x0);
 
 figure(1);
 subplot(311)
@@ -50,8 +50,8 @@ title('Disturbance Over Time')
 ylim([0 2])
 
 % define sys_fb_td as the ss with input Td (I = 0)
-sys_td = ss(A, F, C, D);
-response_td = lsim(sys_td, input, t, x0);
+input = [zeros(length(t), 1) ones(length(t), 1)];
+response_td = lsim(sys1, input, t, x0);
 
 figure(2);
 subplot(311)
@@ -86,25 +86,20 @@ assert(length(A) == rank(Sc));
 
 % Find gain vector K given the closed loop poles below
 CCLP = [-1 -2 -1-1i -1+i];
-K = acker(A, B, CCLP)
+K = acker(A, B*[1;0], CCLP)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Question #5: Compute Kr
-Kr = (-1 / (C*inv(A-B*K)*B))
+Kr = (-1 / (C*inv(A-B*[1;0]*K)*B*[1;0]))
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Question #6
 % Simulate closed loop response to unit step changes
 
-A_fb = A-B*K;
-B_fb = Kr.*B;
+A_fb = A-B*[1;0]*K;
+B_fb = [Kr.*B*[1;0] B*[0;1]];
 C_fb = C;
 D_fb = D;
-
-A_fb_td = A-B*K;
-B_fb_td = [Kr.*B F];
-C_fb_td = C;
-D_fb_td = [D 0];
 
 % Find settling time for setpoint
 sys_fb = ss(A_fb, B_fb, C_fb, D_fb);
@@ -112,7 +107,7 @@ step_info = stepinfo(sys_fb);
 settling_time = step_info.SettlingTime
 
 % Ensure that the graph is large enough to see settling time and then some
-t_stop = round(10 * settling_time)
+t_stop = round(100 * settling_time)
 delta_t = 0.01;
 t = 0:delta_t:t_stop;
 
@@ -121,7 +116,7 @@ step_setpoint = ones(length(t), 1);
 
 % Step function for Td after steady-state. Start by ensuring we are in the
 % steady state before incorporating Td
-step_td_start_index = 5 * round(settling_time / delta_t)
+step_td_start_index = 50 * round(settling_time / delta_t)
 
 % Vector of 0s until well after settling time (then becomes 1 to
 % incorporate Td
@@ -129,9 +124,9 @@ step_td = [zeros(step_td_start_index, 1) ; ones(length(t) - step_td_start_index,
 
 % 2 columned matrix for the input (1st column is setpoint input; 2nd column
 % is Td input)
-input = [step_setpoint step_td];
+input = [ones(length(t), 1) [zeros(step_td_start_index, 1); ones(length(t) - step_td_start_index, 1)]];
 
-sys_cl = ss(A_fb_td, B_fb_td, C_fb_td, D_fb_td);    % construct a system model
+sys_cl = ss(A_fb, B_fb, C_fb, D_fb);    % construct a system model
 response_cl = lsim(sys_cl, input, t, x0);
 
 figure(3);
@@ -172,11 +167,15 @@ L = acker(A', C', OCLP)'
 % Simulate open-loop system
 
 t = [0:0.01:30];
-input = ones(length(t), 1);
+input = [ones(length(t), 1) ones(length(t), 1)];
 
+Ahat = A;
+Bhat = [B*[1;0] L];
+Chat = [eye(size(A))];
+Dhat = D;
 % define sys_obs_I as the open-loop sustem with input I (Td = 0)
-sys_obs_I = ss(A-L*C, B, C, D);      
-response_obs_I = lsim(sys_obs_I, input, t, x0);
+sys_obs = ss(A, Bhat, Chat, D);      
+response_obs_I = lsim(sys_obs, input, t, x0);
 
 figure(4);
 subplot(311)
@@ -200,7 +199,8 @@ title('Disturbance Over Time')
 ylim([0 2])
 
 % define sys_obs_I as the open-loop sustem with input Td (I = 0)
-sys_obs_td = ss(A-L*C, F, C, D);      
+input = [zeros(length(t), 1) ones(length(t), 1)]
+sys_obs_td = ss(A-L*C, B, C, D);      
 response_obs_td = lsim(sys_obs_td, input, t, x0);
 
 figure(5);
@@ -257,8 +257,10 @@ plot(t, x_hat)
 
 % Question #9:
 
-A_cl = [A-B*K B*K; zeros(size(A)) A-L*C];
-B_cl = [B*Kr; zeros(size(B))];
+% Needs work:
+
+A_cl = [A-B*[1;0]*K B*[1;0]*K; zeros(size(A)) A-L*C];
+B_cl = [B*[1;0]*Kr B*[0;1]; zeros(size(B), 2) zeros(size(B), 2)];
 C_cl = [C zeros(size(C))];
 D_cl = [D];
 
