@@ -17,6 +17,8 @@ eigs = eig(A)
 
 % Question #3: Simulate the unit step changes in I and Td
 figure();
+
+
 sys1 = ss(A, B, C, D);      % define sys1 as the ss with input I (Td = 0)
 sys2 = ss(A, F, C, D);      % define sys2 as the ss with input Td (I = 0)
 step(sys1, sys2, 25000)     % Apply unit step to both models and plot
