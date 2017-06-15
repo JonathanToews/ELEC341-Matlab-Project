@@ -1,6 +1,6 @@
 % Define constants
 J1=10/9; J2=10; c=0.1; k=1; kI=1;
-x0 = [1 2 3 4];                     % Initial States
+x0 = [0 0 0 0];                     % Initial States
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Question #1
@@ -10,11 +10,6 @@ B = [0; 0; kI/J1; 0];
 C = [0 1 0 0];
 D = [0];
 F = [0; 0; 0; 1/J2];         % disturbance torque vector
-
-A_2 = A;
-B_2 = [B F];
-C_2 = C;
-D_2 = [D 0];
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Question #2
@@ -63,7 +58,7 @@ subplot(311)
 plot(t, response_td)
 xlabel('Time (s)')
 ylabel('\phi_{2} (rads)')
-title('Output Response to Unit Step in T_d')
+title('Output Response to Unit Step in T_d (Open Loop)')
 
 subplot(312)
 plot(t, zeros(length(t), 1))
