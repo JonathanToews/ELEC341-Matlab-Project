@@ -16,10 +16,12 @@ eigs = eig(A)
 
 
 % Question #3: Simulate the unit step changes in I and Td
+figure();
 sys1 = ss(A, B, C, D);      % define sys1 as the ss with input I (Td = 0)
 sys2 = ss(A, F, C, D);      % define sys2 as the ss with input Td (I = 0)
 step(sys1, sys2, 25000)     % Apply unit step to both models and plot
-title('Unit step changes in the input I and disturbance torque Td');
+title('#3 Unit step changes in the input I and disturbance torque Td');
+legend('Input response', 'Disturbance response');
 
 % Controllability of the open-loop system
 cont = [B A*B A^2*B A^3*B];
@@ -35,18 +37,46 @@ Kr = (-1 / (C*inv(A-B*K)*B))    % ensure that Kr matrix is of type double
 
 
 % Question #6: Simulate closed loop response to unit step changes
-sys3 = ss(A-B*K, Kr.*B, C, D);
-step(sys3, 8);
+figure();
+
+
+T = 0:0.01:10;                 % simulation time = 10 seconds
+U = ones(size(T));             % u = 1, a step input
+sys3 = ss(A-B*K, Kr.*B, C, D); % construct a system model
+[Y, Tsim, X] = lsim(sys3,U,T); % simulate
+plot(Tsim,Y)                   % plot the output vs. time
+title('Step Response with Zero Initial Conditions')
+step(sys3, 8)
 ylim([0 1.5])
+title('#6 Closed loop responses');
 
 S = stepinfo(sys3)
 
 % Question #7:
 OCLP = [-4 -2 -2-2i -2+2i];
-L = acker(A', C', OCLP)
+L = acker(A', C', OCLP)';
 
 % Question #8:
+figure();
+sys4 = ss(A-L*C, B, C, D);
+step(sys4);
 
+[y,t,x] = step(sys4, 8);
+plot(t,x)
+hold on
+legend('x0', 'x1', 'x2', 'x3')
+title('#8 Open Loop Observer Simulation')
+
+% Question #9:
+
+ACL = [A-B*K B*K; zeros(length(A)) A-L*C];
+BCL = [B*Kr; zeros(length(A), 1)];
+CCL = [C zeros(1, length(A))];
+figure();
+sys6 = ss(ACL, BCL, CCL, D)
+step(sys6, 8);
+ylim([0 1.5])
+title('#9 Combined Observer Feedback Simulation')
 
 
 % Appendix
