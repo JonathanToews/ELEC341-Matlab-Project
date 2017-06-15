@@ -1,5 +1,4 @@
 % Question #1
-
 % Define constants
 J1=10/9; J2=10; c=0.1; k=1; kI=1;
 
@@ -16,19 +15,18 @@ eigs = eig(A)
 
 
 % Question #3: Simulate the unit step changes in I and Td
-figure();
+%figure(1);
 
 
 sys1 = ss(A, B, C, D);      % define sys1 as the ss with input I (Td = 0)
 sys2 = ss(A, F, C, D);      % define sys2 as the ss with input Td (I = 0)
-step(sys1, sys2, 25000)     % Apply unit step to both models and plot
-title('#3 Unit step changes in the input I and disturbance torque Td');
-legend('Input response', 'Disturbance response');
+%step(sys1, sys2, 25000)     % Apply unit step to both models and plot
+%title('#3 Unit step changes in the input I and disturbance torque Td');
+%legend('Input response', 'Disturbance response');
 
 % Controllability of the open-loop system
-cont = [B A*B A^2*B A^3*B];
-det_cont = det(cont)
-
+Sc = ctrb(A, B);
+assert(length(A) == rank(Sc));
 
 % Question #4: Design state feedback controller gain K
 CCLP = [-1 -2 -1-1i -1+i];       % closed loop poles
@@ -37,22 +35,74 @@ K = acker(A, B, CCLP)            % controller gain K vector
 % Question #5: Compute Kr
 Kr = (-1 / (C*inv(A-B*K)*B))    % ensure that Kr matrix is of type double
 
-
 % Question #6: Simulate closed loop response to unit step changes
-figure();
+%figure();
 
+A_fb = A-B*K;
+B_fb = Kr.*B;
+C_fb = C;
+D_fb = D;
 
-T = 0:0.01:10;                 % simulation time = 10 seconds
-U = ones(size(T));             % u = 1, a step input
-sys3 = ss(A-B*K, Kr.*B, C, D); % construct a system model
-[Y, Tsim, X] = lsim(sys3,U,T); % simulate
-plot(Tsim,Y)                   % plot the output vs. time
+A_fb_td = A-B*K;
+B_fb_td = [Kr.*B F];
+C_fb_td = C;
+D_fb_td = [D 0];
+
+% Find settling time for setpoint
+sys_fb = ss(A_fb, B_fb, C_fb, D_fb);
+step_info = stepinfo(sys_fb);
+settling_time = step_info.SettlingTime
+
+% Ensure that the graph is large enough to see settling time and then some
+Tstop = round(10 * settling_time)
+delT = 0.01;
+T = 0:delT:Tstop;
+
+% Step function for setpoint from time = 0
+step_setpoint = ones(length(T), 1);
+
+% Step function for Td after steady-state. Start by ensuring we are in the
+% steady state before incorporating Td
+step_td_start_index = 5 * round(settling_time / delT)
+
+% Vector of 0s until well after settling time (then becomes 1 to
+% incorporate Td
+step_td = [zeros(step_td_start_index, 1) ; ones(length(T) - step_td_start_index, 1)];
+
+% 2 columned matrix for the input (1st column is setpoint input; 2nd column
+% is Td input)
+input = [step_setpoint step_td];
+
+sys_cl = ss(A_fb_td, B_fb_td, C_fb_td, D_fb_td);    % construct a system model
+[Y, Tsim, X] = lsim(sys3, input, T);                % simulate
+plot(Tsim,Y)                                        % plot the output vs. time
 title('Step Response with Zero Initial Conditions')
-step(sys3, 8)
-ylim([0 1.5])
-title('#6 Closed loop responses');
 
-S = stepinfo(sys3)
+% sys_cl = ss(A_fb, B_fb, C_fb, D_fb);
+% Ts = 0.1;
+% sys_cl_d = c2d(sys_cl, Ts);
+% sysd = setmpcsignals(sys_cl_d, 'MV', 1, 'MO', 1);
+% MPCobj = mpc(sysd);
+% Tstop = 30;
+% 
+% num_sim_steps = round(Tstop/Ts);
+% r = ones(num_sim_steps, 1);
+% v = [zeros(2*num_sim_steps/3, 1); ones(num_sim_steps/3, 1)];
+% 
+% sim(MPCobj, num_sim_steps, r)
+
+% sys_cl = ss(A_fb_td, B_fb_td, C_fb_td, D_fb_td);
+% Ts = 0.1;
+% sys_cl_d = c2d(sys_cl, Ts);
+% sysd = setmpcsignals(sys_cl_d, 'MD', 1, 'MD', 2, 'MO', 1);
+% MPCobj = mpc(sysd);
+% Tstop = 30;
+% 
+% num_sim_steps = round(Tstop/Ts);
+% r = ones(num_sim_steps, 1);
+% v = [zeros(2*num_sim_steps/3, 1); ones(num_sim_steps/3, 1)];
+% 
+% sim(MPCobj, num_sim_steps, r, v)
 
 % Question #7:
 OCLP = [-4 -2 -2-2i -2+2i];
