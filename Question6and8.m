@@ -13,7 +13,7 @@ C = [0 1 0 0];
 D = [0];
 
 Sc = ctrb(A, BI);
-assert(length(A) == rank(Sc));
+%assert(length(A) == rank(Sc));
 
 % Find gain vector K given the closed loop poles below
 CCLP = [-1 -2 -1-1i -1+i];
@@ -26,7 +26,7 @@ Kr = (-1 / (C*inv(A-BI*K)*BI))
 
 
 So = obsv(A, C)
-assert(length(A) == rank(So));
+%assert(length(A) == rank(So));
 
 % Find gain vector L given the closed loop poles below
 OCLP = [-4 -2 -2-2i -2+2i];
@@ -41,5 +41,5 @@ L = place(A', C', OCLP)'
 % set_param('ClosedLoop/K', 'Gain', mat2str(K))
 % set_param('ClosedLoop/Kr', 'Gain', num2str(Kr))
 
-simOut = sim('ClosedLoop');
-% simOut = sim('OpenLoop_1')
+%simOut = sim('ClosedLoop');
+simOut = sim('OpenLoop_1')
